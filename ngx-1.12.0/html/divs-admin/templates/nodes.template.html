@@ -1,0 +1,39 @@
+<table class="table table-hover table-sm" >
+	  <thead class="thead-default">
+		<tr>
+		  <th>host</th>
+		  <th>ver</th>
+			<th>fstatus</th>
+			<th>work_count</th>
+			<th>req_count</th>
+			<th>2xx</th>
+			<th>3xx</th>
+			<th>4xx</th>
+			<th>5xx</th>
+			<th>con_active</th>
+			<th>con_reading</th>
+			<th>con_writing</th>
+			<th>con_idle</th>
+		</tr>
+	  </thead>
+	  <tbody *ngIf="nodes">	
+		<ng-template ngFor let-n [ngForOf]="nodes" let-i="index" [ngForTrackBy]="trackByFn">
+			<tr>
+					<td>{{n.address}}</td>
+					<td>{{n.ver}}</td>
+					<td>{{n.status}}</td>
+					<td>{{n.worker_count}}</td>
+					<td>{{n.total_count}}</td>
+					<td>{{n.req_2xx}}</td>
+					<td>{{n.req_3xx}}</td>
+					<td>{{n.req_4xx}}</td>
+					<td>{{n.req_5xx}}</td>
+					<td>{{n.con_active}}</td>
+					<td>{{n.con_reading}}</td>
+					<td>{{n.con_writing}}</td>
+					<td>{{n.con_idle}}</td>
+			</tr>
+		</ng-template>
+	  </tbody>
+	</table>
+	

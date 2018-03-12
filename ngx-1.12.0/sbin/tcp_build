@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export THIRD_PARTY_HOME=$HOME/thirdparty
+export PCRE_HOME=$THIRD_PARTY_HOME/pcre-8.36
+export LUAJIT_HOME=$THIRD_PARTY_HOME/luajit
+export LUAJIT_LIB=$LUAJIT_HOME/lib
+export LUAJIT_INC=$LUAJIT_HOME/include/luajit-2.1
+
+./configure --http-client-body-temp-path=temp/client_body_temp --http-proxy-temp-path=temp/proxy-temp --http-fastcgi-temp-path=temp/fastcgi-temp \
+	--http-uwsgi-temp-path=temp/uwsgi-temp --http-scgi-temp-path=temp/scgi-temp	\
+	--with-http_v2_module --with-http_ssl_module --with-stream --with-stream_ssl_module --with-http_realip_module \
+	--with-file-aio \
+	--with-google_perftools_module --with-pcre-jit --with-http_stub_status_module \
+	--with-ld-opt="-L$PCRE_HOME/lib -fPIC" \
+	--with-cc-opt="-Wno-unused-function"	\
+	--add-dynamic-module=modules/ngx_devel_kit --add-module=modules/srcache-nginx-module --add-module=modules/lua-ssl-nginx-module	\
+	--add-dynamic-module=modules/lua-nginx-module	\
+	--add-module=modules/stream-lua-nginx-module --add-module=modules/stream-echo-nginx-module --add-module=modules/nginx_upstream_check_module \
+	--add-dynamic-module=modules/ngx_hotch_potch_module/stream  \
+	--add-dynamic-module=modules/ngx_lua_mqtt_module/stream	\
+	--add-dynamic-module=modules/ngx_proc_luashm_module/stream
+
+cp Makefile.in Makefile
+cp conf/nginx.tcp.conf conf/nginx.conf
+

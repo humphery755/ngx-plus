@@ -1,0 +1,167 @@
+# vim:set ft= ts=4 sw=4 et fdm=marker:
+
+use Test::Nginx::Socket;
+use Test::Nginx::Socket::Lua;
+
+#worker_connections(1014);
+#master_process_enabled(1);
+log_level('info'); # to ensure any log-level can be outputted
+
+repeat_each(1);
+
+plan tests => repeat_each() * (blocks() * 1);
+
+#$ENV{TEST_NGINX_MEMCACHED_PORT} ||= 11211;  # make this env take a default value
+
+$ENV{TEST_NGINX_NGX_HOME} ||= "/root/src/mqtt-nginx-1.11.10";
+$ENV{TEST_NGINX_THIRD_PARTY_HOME} ||= "/usr/local/thirdparty";
+
+our $main_config = <<'_EOC_';
+	load_module $TEST_NGINX_NGX_HOME/lib/ngx_http_echo_module.so;
+	load_module $TEST_NGINX_NGX_HOME/lib/ngx_http_dyups_module.so;
+	load_module $TEST_NGINX_NGX_HOME/lib/ngx_lua_mqtt_kit_module.so;
+	load_module $TEST_NGINX_NGX_HOME/lib/ngx_lua_diversion_module.so;
+
+	
+_EOC_
+
+our $http_config = <<'_EOC_';
+
+	diversion_env TEST1;
+	lua_package_path '$TEST_NGINX_THIRD_PARTY_HOME/lualib/?.lua;$TEST_NGINX_NGX_HOME/lib/?.lua;$TEST_NGINX_NGX_HOME/?.lua;;';
+	lua_package_cpath '$TEST_NGINX_THIRD_PARTY_HOME/luajit/?.so;$TEST_NGINX_THIRD_PARTY_HOME/lualib/?.so;$TEST_NGINX_NGX_HOME/lib/?.so;;';
+	upstream database {
+		server 127.0.0.1:8888;
+	}
+
+	lua_shared_dict DICT_DIVERSION_USER_UPS 2m;
+	lua_shared_dict DICT_DIVERSION_SYSCONFIG 1m;
+
+	init_by_lua '
+	      require "resty.core"
+	      lrucache = require "resty.lrucache"
+	      libconf = require "config"
+	      libcommon = require "diversion.common"
+	      lconfig = libconf:new()
+	      lcommon = libcommon:new()
+	      policyCache=lrucache.new(10)
+	    
+	';
+	init_worker_by_lua_block {
+		local cjson = require "cjson"
+		local file = io.open("test.json", "r")
+		local strjson = file:read();
+		file:close()
+		jsonObj=cjson.decode(strjson)
+
+
+
+		local libdiv = require "ngxext.diversion"
+		
+		local dictSysconfig = ngx.shared.DICT_DIVERSION_SYSCONFIG
+		ngx.log(ngx.ERR,cjson.encode(jsonObj));
+		local buff = lcommon.encode_policy(jsonObj)
+		dictSysconfig:set("DIV_RULES",buff)
+		local tmp=lcommon.decode_policy(buff)
+		local runtimeInfo={ver=1,on_off=1,to='A',src='B',diversionHost={TEST1="http://192.168.1.244:80",A="http://www.uhomecp.com",B="http://192.168.1.244:4003"}}
+		local diversionHost={TEST1="http://127.0.0.1"}
+		local rInfoBuff = lcommon.encode_runtimeInfo(runtimeInfo,diversionHost)
+		dictSysconfig:set("DIV_runtimeInfo",rInfoBuff)
+
+		--for i=1, 10, 1 do
+			buff = dictSysconfig:get("DIV_RULES")
+			tmp=lcommon.decode_policy(buff)
+			ngx.log(ngx.ERR,cjson.encode(tmp));
+			buff = lcommon.encode_policy(tmp)
+			dictSysconfig:set("DIV_RULES",buff)
+		--end
+
+	}
+
+	upstream divs_a_ups {
+		sticky name=access_token ;
+		server 120.24.82.71:10080;
+		keepalive 1000;
+	}
+	upstream divs_b_ups {
+		sticky name=access_token ;
+#		server www.uhomecp.com:80;
+		server 120.24.82.71:10080;
+		keepalive 1000;
+	}
+	
+_EOC_
+
+no_shuffle();
+#no_diff();
+#no_long_string();
+run_tests();
+
+__DATA__
+
+
+=== TEST 2: test reading request body
+--- main_config eval: $::main_config
+--- http_config eval: $::http_config
+--- config
+	location /uhome-cas {
+		set $backend 'default_ups';
+		set $action 0;
+		set $plugin '';
+		rewrite_by_lua_file $TEST_NGINX_NGX_HOME/diversion/diversion.lua;
+		proxy_pass http://$backend;
+		header_filter_by_lua_file $TEST_NGINX_NGX_HOME/diversion/plugins_header_filter.lua; # 
+	}
+
+	location /test {
+	
+		content_by_lua_block{
+			local libdiv = require "ngxext.diversion"
+			local cjson = require "cjson"
+			local dictSysconfig = ngx.shared.DICT_DIVERSION_SYSCONFIG
+			--for i=1, 1000, 1 do
+				buff = lcommon.encode_policy(jsonObj)
+				dictSysconfig:set("DIV_RULES",buff)
+				buff = dictSysconfig:get("DIV_RULES")
+				tmp=lcommon.decode_policy(buff)
+
+
+				local rInfoBuff = dictSysconfig:get("DIV_runtimeInfo")
+				local runtimeInfo,host=lcommon.decode_runtimeInfo(rInfoBuff)
+				runtimeInfo.ver=runtimeInfo.ver+1
+				local rInfoBuff = lcommon.encode_runtimeInfo(runtimeInfo,host)
+				dictSysconfig:set("DIV_runtimeInfo",rInfoBuff)
+				local backend,text,action = libdiv.exec_policy(runtimeInfo.ver)
+				ngx.log(ngx.ERR,action,", ",backend,", ",text)
+				
+			--end
+		}
+	}
+
+--- request eval
+"POST /test?uhome-cas/login?service=http://120.24.82.71:10080/uhomecp-patrol/shiro-cas
+lt:LT-45010-CO2BM3tD2en2tfLre3q4pp3fazw4EO
+execution:e1s1
+_eventId:submit
+username:18989991565
+password:821018"
+--- more_headers
+Accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Encoding:gzip, deflate
+Accept-Language:en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4
+Cache-Control:no-cache
+Connection:keep-alive
+Content-Length:113
+Content-Type:application/x-www-form-urlencoded
+Cookie:__utmt=1; __utma=2546864.2143157114.1490243433.1490335952.1490343414.5; __utmb=2546864.4.10.1490343414; __utmc=2546864; __utmz=2546864.1490243433.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none);                           oid=999				
+Host:120.24.82.71:10080
+Origin:http://120.24.82.71:10080
+Pragma:no-cache
+Referer:http://120.24.82.71:10080/uhome-cas/login?service=http://120.24.82.71:10080/uhomecp-patrol/shiro-cas
+Upgrade-Insecure-Requests:1
+User-Agent:Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Cookie: aid=1007
+Cookie: cid=1117
+X-Forwarded-For: 192.168.1.10, 192.168.1.111
+--- response_headers
+

@@ -1,0 +1,71 @@
+<div *ngIf="flow">
+	<form class="form-inline" role="form" > <!--  *ngIf="flow === null" -->
+	<table class="table">
+		<tr>			
+			<td>env:</td>
+			<td>{{flow.div_env}}</td>
+			<td>src:</td>
+			<td>{{flow.src}}</td>
+			<td>to:</td>
+			<td>{{flow.to}}</td>
+			<td>ver:</td>
+			<td>{{flow.ver}}</td>
+		</tr>
+		<tr>
+			<td>title:</td>
+			<td><input name="title" class="form-control" [(ngModel)]="flow.title"></td>			
+			<td>status:</td>
+			<td>
+				<select name="status" class="selectpicker" [(ngModel)]="flow.status">
+					<option value=0>暂存</option>
+					<option value=1>激活</option>
+					<option value=3>完成</option>
+					<option value=4>结束/回滚</option>
+				</select>
+			</td>
+			<td colspan="4">
+				<button  (click)="onSaveFlow()">{{flow.fid>0?"更新":"保存"}}</button>			
+				&nbsp;&nbsp;&nbsp;
+				<button (click)="onSyncFlow(flow.fid)" *ngIf="flow.fid>0">同步</button>
+				&nbsp;&nbsp;&nbsp;
+				<button (click)="addPolicyGroup()" *ngIf="flow.fid>0">添加Policy Group</button>
+			</td>
+		</tr>
+	</table>
+</form>
+<div class="table-responsive" >
+	<router-outlet></router-outlet>
+	<table class="table table-hover table-sm" >
+	  <thead class="thead-default">
+		<tr>
+		  <th>action</th>
+		  <th>uri</th>
+		  <th>backend</th>
+		  <th>text</th>
+			<th>id</th>
+			<th>level/ptype</th>
+			<th>option</th>
+		</tr>
+	  </thead>
+	  <tbody *ngIf="policyGroups">	
+		<ng-template ngFor let-pg [ngForOf]="policyGroups | async" let-i="index" [ngForTrackBy]="trackByFn">
+			<tr>
+					<td>{{pg.action}}</td>
+					<td>{{pg.uri}}</td>
+					<td>{{pg.backend}}</td>
+					<td>{{pg.text}}</td>
+					<td>{{pg.gid}}</td>
+					<td>{{pg.level}}</td>
+					<td><a class="link" (click)="onDeletePG(pg)" href="#">删除</a> / <a class="link" (click)="onEditPG(pg)" href="#">编辑</a> / <a class="link" (click)="onAddPolicy(pg)" href="#">添加Policy</a></td>
+				</tr>
+				<tr *ngFor="let p of pg.policys;let i = index;">
+					<td colspan="4"></td>
+					<td>{{p.id}}</td>
+					<td>{{p.type}}</td>
+					<td><a (click)="onDeletePolicy(p)" href="#">删除</a> / <a class="link" (click)="onEditPolicy(pg.gid,p)" href="#">编辑</a></td>
+				</tr>
+		</ng-template>
+	  </tbody>
+	</table>
+</div>
+</div>

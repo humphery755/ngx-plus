@@ -1,0 +1,87 @@
+
+ 
+ <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" *ngIf="selectPolicy">
+    <div class="modal-dialog" role="document" >
+      <div class="modal-content" style="width:800px">				 
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            <span class="sr-only">Close</span>
+          </button>
+          <h4 class="modal-title" id="exampleModalLabel">Policy Data</h4>
+        </div>
+        <div class="modal-body">
+					<div id="exampleAlert" class="alert alert-success" role="alert" aria-hidden="true">
+							<strong>You successfully operation!</strong>
+					</div>
+					<form class="form-inline" role="form" > <!--  *ngIf="flow === null" -->
+						<table class="table" frame=below>
+							<tr>
+								<td>gid:</td>
+								<td>{{selectPolicy.gid}}</td>
+								<td>pid:</td>
+								<td>{{selectPolicy.id}}</td>
+								<td>type:</td>
+								<td><select name="type" class="selectpicker" [(ngModel)]="selectPolicy.type" *ngIf="selectPolicy.id==0">
+								<option value="aidrange">aidrange</option>
+								<option value="aidset">aidset</option>
+								<option value="aidsuffix">aidsuffix</option>
+								<option value="cidrange">cidrange</option>
+								<option value="cidset">cidset</option>
+								<option value="cidsuffix">cidsuffix</option>
+								<option value="oidset">oidset</option>
+								<option value="ipset">ipset</option>
+								<option value="iprange">iprange</option>
+								</select><p *ngIf="selectPolicy.id>0">{{selectPolicy.type}}</p>
+								</td>
+							</tr>
+						</table>
+					</form>
+					<router-outlet></router-outlet>
+					<table class="table table-condensed table-sm" *ngIf="policyDatas">
+						<thead class="thead-default">
+								<tr>
+										<th>pdid</th>
+										<th>val</th>
+										<th>start</th>
+										<th>end</th>
+										<th>option</th>
+								</tr>
+						</thead>
+						<tbody>
+								<tr *ngFor="let pd of policyDatas | async" >
+										<td>{{pd.id}}</td>
+										<td>{{pd.val}}</td>
+										<td>{{pd.start}}</td>
+										<td>{{pd.end}}</td>
+										<td><a class="link" (click)="onDeletePD(pd)" href="#">删除</a> / <a class="link" (click)="onEditPD(pd,selectPolicy.type)" href="#">编辑</a></td>
+								</tr>
+								<tr >
+										<td colspan="5" align="right"><a class="link" (click)="onFirstPage(selectPolicy)" *ngIf="pageIndex>1" href="#"> |<< </a><a class="link" (click)="onPreviousPage(selectPolicy)" *ngIf="pageIndex>0" href="#"> << </a> <a class="link" (click)="onNextPage(selectPolicy)" *ngIf="pageLen>15" href="#"> >> </a></td>
+								</tr>
+						</tbody>
+					</table>
+        </div>
+        <div class="modal-footer">          
+					<ng-template [ngIf]="selectPolicy.id==0">
+          	<button type="button" class="btn btn-primary" (click)="onSavePolicy()">保存Policy</button>
+					</ng-template>
+					<ng-template [ngIf]="selectPolicy.id>0">
+          	<button type="button" class="btn btn-primary" (click)="onSavePD()">保存PolicyData</button>
+						<div [ngSwitch]="selectPolicy.type">
+							<template ngSwitchCase="aidset">
+							<button type="button" class="btn btn-primary" (click)="onAddPDAID()" >添加PD: aid</button>
+							</template>
+							<template ngSwitchCase="cidset">
+							<button type="button" class="btn btn-primary" (click)="onAddPDCID()" >添加PD: cid</button>
+							</template>
+							<template ngSwitchDefault>
+							<button type="button" class="btn btn-primary" (click)="onAddPD()" >添加PolicyData</button>
+							</template>						
+						</div>
+					</ng-template>
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,18 @@
+global s; 
+global quit = 0; 
+probe timer.profile { 
+    if (pid() == target()) { 
+        if (quit) { 
+            foreach (i in s-) { 
+                print_ustack(i); 
+                printf("\t%d\n", @count(s[i])); 
+            } 
+            exit() 
+        } else { 
+            s[ubacktrace()] <<< 1; 
+        } 
+    } 
+} 
+probe timer.s(20) { 
+    quit = 1 
+} 

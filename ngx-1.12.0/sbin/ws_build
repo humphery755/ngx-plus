@@ -1,0 +1,23 @@
+#!/bin/bash
+
+export THIRD_PARTY_HOME=/usr/local/thirdparty
+export PCRE_HOME=$THIRD_PARTY_HOME/pcre-8.36
+export LUAJIT_HOME=$THIRD_PARTY_HOME/luajit
+export LUAJIT_LIB=$LUAJIT_HOME/lib
+export LUAJIT_INC=$LUAJIT_HOME/include/luajit-2.1
+
+#--with-debug 
+./configure --http-client-body-temp-path=temp/client_body_temp --http-proxy-temp-path=temp/proxy-temp --http-fastcgi-temp-path=temp/fastcgi-temp --http-uwsgi-temp-path=temp/uwsgi-temp --http-scgi-temp-path=temp/scgi-temp	\
+	--with-http_v2_module --with-http_ssl_module --with-openssl=$HOME/src/openssl-1.0.2k --with-stream --with-stream_ssl_module --with-http_realip_module --with-http_degradation_module \
+	--with-pcre=/root/src/pcre-8.40 --with-pcre-jit --with-http_stub_status_module \
+	--with-cc-opt="-Wno-unused-function"	\
+	--add-module=modules/lua-ssl-nginx-module --add-module=modules/ngx_devel_kit --add-module=modules/srcache-nginx-module \
+	--add-module=modules/stream-lua-nginx-module --add-module=modules/stream-echo-nginx-module --add-module=modules/nginx_upstream_check_module --add-module=modules/headers-more-nginx-module \
+	--add-dynamic-module=modules/echo-nginx-module \
+	--add-module=modules/lua-nginx-module	\
+	--add-dynamic-module=modules/ngx_lua_mqtt_kit_module/http \
+	--add-dynamic-module=modules/ngx_lua_mqtt_module/http
+
+#
+cp Makefile.in Makefile
+cp conf/nginx.ws.conf conf/nginx.conf

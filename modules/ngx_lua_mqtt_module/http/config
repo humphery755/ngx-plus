@@ -1,0 +1,20 @@
+ngx_addon_name=ngx_http_lua_mqtt_module
+MQTT_SRCS="$ngx_addon_dir/ngx_http_lua_mqtt_module.c $ngx_addon_dir/ngx_http_lua_mqtt_util.c"
+MQTT_DEPS="$ngx_addon_dir/../api/ngx_lua_mqtt_module.h $ngx_addon_dir/ngx_http_lua_mqtt_module_ipc.h"
+CORE_INCS="$CORE_INCS $ngx_addon_dir/../../lua-nginx-module/src"
+
+if test -n "$ngx_module_link"; then
+    ngx_module_type=HTTP_AUX_FILTER
+    ngx_module_name=$ngx_addon_name
+    ngx_module_incs=
+    ngx_module_deps="$MQTT_DEPS"
+    ngx_module_srcs="$MQTT_SRCS"
+    ngx_module_libs=
+
+    . auto/module
+else
+	HTTP_MODULES="$HTTP_MODULES $ngx_addon_name"
+    HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES $ngx_addon_name"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $MQTT_SRCS"
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $MQTT_DEPS"
+fi

@@ -1,0 +1,81 @@
+
+load_module lib/ngx_http_echo_module.so;
+#load_module lib/ngx_http_dyups_module.so;
+load_module lib/ngx_lua_mqtt_kit_module.so;
+#load_module lib/ngx_proc_luashm_backup_module.so;
+load_module lib/ngx_lua_diversion_module.so;
+
+#user root;
+#daemon off;
+#master_process off;
+#user  nobody;
+worker_processes  2;
+worker_cpu_affinity auto;
+worker_rlimit_nofile 100000;
+
+#error_log  logs/error.log  notice;
+error_log  /log/nginx/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  32768;
+        accept_mutex off;
+        multi_accept on;
+}
+
+env NGX_HOME;
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    charset utf-8;
+    #reuse_port on;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                '$status $body_bytes_sent "$http_referer" '
+                '"$http_user_agent" "$http_x_forwarded_for"'
+                ' $request_time $upstream_response_time';
+
+    access_log  /log/nginx/access.log  main buffer=1m;
+
+    #access_log  logs/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  60;
+    proxy_connect_timeout 90;
+    proxy_send_timeout 90;
+    proxy_read_timeout 90;
+    proxy_buffers 256  8k;
+    proxy_buffer_size 8k;
+    proxy_busy_buffers_size 16k;
+    proxy_headers_hash_max_size 51200;
+    proxy_headers_hash_bucket_size 6400;
+    
+
+    #server_names_hash_bucket_size 128;
+    #server_names_hash_bucket_size 12800;
+    client_header_buffer_size 128k;
+    large_client_header_buffers 8 128k;
+    client_body_buffer_size 32k;
+    client_max_body_size 8m;
+    
+    gzip  on;
+    gzip_min_length 1k;
+    gzip_buffers 4 16k;
+   #gzip_comp_level 2;
+    gzip_types text/plain application/javascript text/css text/javascript application/json;
+
+    open_file_cache max=204800 inactive=20s;
+    open_file_cache_valid 30s;
+    open_file_cache_min_uses 2;
+    open_file_cache_errors on;
+    
+   
+    include divs-engine.test.conf;
+    #include divs-engine.conf;
+
+}

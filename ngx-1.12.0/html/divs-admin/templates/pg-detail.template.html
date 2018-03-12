@@ -1,0 +1,24 @@
+<form class="form-inline" role="form" *ngIf="selectPolicyGroup"> <!--  *ngIf="flow === null" -->
+	<table class="table">
+		<tr>
+			<td>gid:</td>
+			<td>{{selectPolicyGroup.gid}}</td>
+			<td>action:</td>
+			<td><select name="action" class="selectpicker" [(ngModel)]="selectPolicyGroup.action">
+			<option value="1">given upstream</option>
+			<option value="2">redirect</option>
+			</select></td>
+			<td>uri:</td>
+			<td><input type="url" class="form-control" name="uri" placeholder="uri"  [(ngModel)]="selectPolicyGroup.uri"></td>
+		</tr>
+		<tr>
+			<td>backend:</td>
+			<td><input type="text" class="form-control" name="backend" placeholder="backend"  [(ngModel)]="selectPolicyGroup.backend"></td>
+			<td>text:</td>
+			<td><input type="text" class="form-control" name="text" placeholder="text"  [(ngModel)]="selectPolicyGroup.text"></td>
+			<td>level:</td>
+			<td><input type="number" class="form-control" name="level" placeholder="level"  [(ngModel)]="selectPolicyGroup.level">
+			<button (click)="onSavePolicyGroup(selectPolicyGroup)">保存</button></td>
+		</tr>
+	</table>
+</form>

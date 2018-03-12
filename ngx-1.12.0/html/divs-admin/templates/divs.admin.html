@@ -1,0 +1,51 @@
+<nav class="navbar navbar-expand-md navbar-inverse fixed-top bg-inverse">
+  <a class="navbar-brand fa-navicon" href="#">Diversion Admin (v0.1.2)</a>
+</nav>
+
+<div class="container-fluid bg-faded">
+  <div class="row" >
+    <div class="col-sm-3 col-md-2 d-none d-sm-block sidebar " *ngIf="envTrees">
+      <div class="navigation_box">
+        <ul class="nav nav-pills flex-column">
+
+          <li class="row" >
+            <button class="nav-item bg-primary  text-white">环 &nbsp;&nbsp; 境</button>
+          </li>
+          <ul id="nav_dom_divs_sub" class="nav nav-pills flex-column ">
+            <li class="nav-item" *ngFor="let env of envTrees | async" (click)="onSelect(env)" [class.lead]="env === selectedEnv"><a class="nav-link" href="#">{{env.div_env}}</a></li>
+          </ul>
+          <!--
+          <li class="row" >
+              <button class="nav-item bg-primary  text-white">配 &nbsp;&nbsp; 置</button>
+          </li>
+          
+          <ul id="nav_dom_confs_sub" class="nav nav-pills flex-column">
+            <li class="nav-item"  ><a class="nav-link" routerLink = "/crisis-center">主机ENV映射</a></li>
+            <li class="nav-item"  ><a class="nav-link" routerLink = "/crisis-center">系统插件</a></li>
+            <li class="nav-item"  ><a class="nav-link" routerLink = "/crisis-center">策略指令</a></li>
+            <li class="nav-item"  ><a class="nav-link" routerLink = "/crisis-center">策略类型</a></li>
+          </ul>
+          -->
+          <li class="row" >
+              <button class="nav-item bg-primary  text-white">监 &nbsp;&nbsp; 控</button>
+          </li>
+          
+          <ul id="nav_dom_monitor_sub" class="nav nav-pills flex-column">
+            <li class="nav-item"  ><a class="nav-link" (click)="onListNodeInfo()" href="#">Engine状态</a></li>
+          </ul>
+          <li class="row" >
+              <button class="nav-item bg-primary  text-white">历史 &nbsp;&nbsp;信息</button>
+          </li>
+          
+          <ul id="nav_dom_his_sub" class="nav nav-pills flex-column">
+            <li class="nav-item" *ngFor="let env of envTrees | async" (click)="onListHisFlows(env)" [class.lead]="env === selectedEnv"><a class="nav-link" href="#">{{env.div_env}}</a></li>
+          </ul>
+
+        </ul>
+      </div>
+    </div>
+    <div class="col-sm-9 offset-sm-3 col-md-10 offset-md-2 pt-3">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+<div class="navigation_box">
+		<ul class="nav nav-pills flex-column">
+			<li class="nav-item" >
+              <a class="nav-link active" id="nav_dom_divs" href="#">环境</a>
+            </li>
+			<ul id="nav_dom_divs_sub" class="nav nav-pills flex-column">
+				<li class="nav-item" *ngFor="let flow of flows"><a class="nav-link" href="#">{{flow.title}}</a></li>
+			</ul>
+		</ul>
+
+</div>
+
+<script>
+function loadpage(url){
+	$("#main-page").load(url);
+}
+var preSelectedElement="";
+$(document).ready(function(){
+	$("#nav_dom_divs").addClass("active");//selected
+	//$("#nav_dom_dnssec_ksk").attr("href","javascript:loadpage('env.html');");
+	$("#nav_dom_divs_fid1").on("click",function(){
+        loadpage('env.html');
+		if(preSelectedElement!=""){
+			$(preSelectedElement).removeClass("lead");
+		}
+		$("#nav_dom_divs_fid1").addClass("lead");
+		preSelectedElement="#nav_dom_divs_fid1"
+		return false;
+    });
+	$("#nav_dom_divs_fid2").on("click",function(){
+        loadpage('env.html');
+		if(preSelectedElement!=""){
+			$(preSelectedElement).removeClass("lead");
+		}
+		$("#nav_dom_divs_fid2").addClass("lead");
+		preSelectedElement="#nav_dom_divs_fid2"
+		return false;
+    });
+
+	
+	$("#nav_dom_divs_fid1").click();
+});
+</script>

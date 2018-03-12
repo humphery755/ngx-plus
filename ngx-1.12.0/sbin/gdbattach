@@ -1,0 +1,19 @@
+file objs/nginx
+set logging on
+set detach-on-fork on
+set follow-fork-mode child
+set breakpoint pending on
+
+b ngx_stream_socks5_module.c:341
+#b ngx_http_lua_diversion_init_sysconf_zone
+#b ngx_stream_socks5_resolve_handler
+#b ngx_stream_socks5_process_auth_handler
+#b ngx_stream_socks5_connect_handler
+#b ngx_stream_socks5_handler
+#b ngx_stream_socks5_get_peer
+#b ngx_stream_socks5_connect
+#b ngx_stream_socks5_next_upstream
+#b ngx_conf_set_str_pwd
+#b ngx_stream_proxy_handler
+#b ngx_stream_proxy_process_connection
+#b ngx_stream_proxy_resolve_handler

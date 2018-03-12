@@ -1,0 +1,22 @@
+ngx_addon_name=ngx_http_lua_tesseract_module
+MQTT_SRCS="$ngx_addon_dir/ngx_http_lua_tesseract_module.cpp"
+MQTT_DEPS="$ngx_addon_dir/ngx_http_lua_tesseract_module.h"
+
+CORE_INCS="$CORE_INCS $ngx_addon_dir/api"
+
+
+if test -n "$ngx_module_link"; then
+    ngx_module_type=HTTP_AUX_FILTER
+    ngx_module_name=$ngx_addon_name
+    ngx_module_incs=
+    ngx_module_deps="$MQTT_DEPS -ltesseract"
+    ngx_module_srcs="$MQTT_SRCS"
+    ngx_module_libs=
+
+    . auto/module
+else
+	HTTP_MODULES="$HTTP_MODULES $ngx_addon_name"
+    HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES $ngx_addon_name"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $MQTT_SRCS"
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $MQTT_DEPS"
+fi

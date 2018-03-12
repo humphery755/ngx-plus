@@ -1,0 +1,20 @@
+<table class="table table-hover table-sm" >
+	  <thead class="thead-default">
+		<tr>
+		  <th>fid</th>
+		  <th>tile</th>
+		  <th>ver</th>
+		  <th>date</th>
+		</tr>
+	  </thead>
+	  <tbody *ngIf="flows">	
+		<ng-template ngFor let-f [ngForOf]="flows" let-i="index" [ngForTrackBy]="trackByFn">
+			<tr>
+					<td>{{f.fid}}</td>
+					<td>{{f.title}}</td>
+					<td>{{f.ver}}</td>
+					<td>{{f.crt_date}}</td>				
+			</tr>
+		</ng-template>
+	  </tbody>
+	</table>

@@ -1,0 +1,34 @@
+
+default:
+	make -f objs/Makefile
+	mv objs/*.so lib/
+
+clean:
+	find . -name *.o |xargs rm
+
+build:
+	$(MAKE) CFLAGS="-g -O0" -f objs/Makefile
+	$(MAKE) CFLAGS="-g -O0" -f objs/Makefile manpage
+
+install:
+	#$(MAKE) -f objs/Makefile install
+	if [ -f ~/diversion-engine/logs/nginx.pid ]; then kill -TERM `cat ~/diversion-engine/logs/nginx.pid`; fi
+	if [ -f ~/diversion-admin/logs/nginx.pid ]; then kill -TERM `cat ~/diversion-admin/logs/nginx.pid`; fi
+	cp -rf lib	~/diversion-engine/
+	cp -rf conf/divs-engine*	~/diversion-engine/conf/
+	cp objs/nginx sbin/nginx.sh sbin/env.sh		~/diversion-engine/sbin/
+	cp -rf lib/admin	~/diversion-admin/lib/
+	cp -rf lib/diversion/userinfo	~/diversion-admin/lib/diversion/
+	cp -rf lib/diversion/common.lua	~/diversion-admin/lib/diversion/
+	cp lib/*.so		~/diversion-admin/lib/
+	cp objs/nginx sbin/nginx.sh sbin/env.sh		~/diversion-admin/sbin/
+	cp conf/divs-admin.conf		~/diversion-admin/conf/
+
+upgrade:
+	/usr/local/nginx/sbin/nginx -t
+
+	kill -USR2 `cat /usr/local/nginx/logs/nginx.pid`
+	sleep 1
+	test -f /usr/local/nginx/logs/nginx.pid.oldbin
+
+	kill -QUIT `cat /usr/local/nginx/logs/nginx.pid.oldbin`

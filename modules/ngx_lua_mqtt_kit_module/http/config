@@ -1,0 +1,21 @@
+ngx_addon_name=ngx_lua_mqtt_kit_module
+HPOTCH_SRCS="$ngx_addon_dir/ngx_lua_mqtt_kit_module.c $ngx_addon_dir/ngx_lua_shdict_exts.c $ngx_addon_dir/../ngx_disruptor.c $ngx_addon_dir/../mqtt_protocol.c $ngx_addon_dir/../ngx_bizlog.c"
+HPOTCH_DEPS="$ngx_addon_dir/../../lua-nginx-module/src/ngx_http_lua_shdict.h"
+#CORE_INCS="$CORE_INCS $ngx_addon_dir/../api""$ngx_addon_dir/../../lua-nginx-module/src $ngx_addon_dir/../../ngx_devel_kit/src"
+HPOTCH_INCS="$ngx_addon_dir/../api $ngx_addon_dir/../../lua-nginx-module/src"
+if test -n "$ngx_module_link"; then
+    ngx_module_type=HTTP_AUX_FILTER
+    ngx_module_name=$ngx_addon_name
+    ngx_module_incs=$HPOTCH_INCS
+    ngx_module_deps="$HPOTCH_DEPS"
+    ngx_module_srcs="$HPOTCH_SRCS"
+    ngx_module_libs=-luuid
+    . auto/module
+else
+	HTTP_MODULES="$HTTP_MODULES $ngx_addon_name"
+    HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES $ngx_addon_name"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $HPOTCH_SRCS"
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $HPOTCH_DEPS"
+    CORE_INCS="$CORE_INCS $HPOTCH_INCS"
+    #CORE_LIBS="$CORE_LIBS $ngx_module_libs"
+fi

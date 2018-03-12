@@ -1,0 +1,14 @@
+ngx_addon_name=ngx_proc_luashm_backup_module
+LUASHM_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/ngx_proc_luashm_backup_module.c"
+
+if test -n "$ngx_module_link"; then
+    ngx_module_type=PROCS
+    ngx_module_name=$ngx_addon_name
+    ngx_module_srcs="$LUASHM_SRCS"
+
+    . auto/module
+else
+	PROCS_MODULES="$PROCS_MODULES $ngx_addon_name"
+    HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES $ngx_addon_name"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $LUASHM_SRCS"
+fi

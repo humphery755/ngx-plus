@@ -1,0 +1,11 @@
+file objs/nginx
+directory .
+set logging on
+set follow-fork-mode child 
+set detach-on-fork on
+set breakpoint pending on
+
+b ngx_ffi_diversion_exec_policy
+b diversion_decode_runtimeinfo
+
+r -p /root/src/mqtt-nginx-1.11.10/t/servroot/ -c /root/src/mqtt-nginx-1.11.10/t/servroot/conf/nginx.conf
