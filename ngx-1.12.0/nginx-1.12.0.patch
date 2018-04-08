@@ -1,0 +1,437 @@
+diff -urNa nginx-1.12.0/auto/cc/gcc nginx-1.12.0-new/auto/cc/gcc
+--- nginx-1.12.0/auto/cc/gcc	2017-04-12 22:46:01.000000000 +0800
++++ nginx-1.12.0-new/auto/cc/gcc	2018-04-07 14:48:19.568999946 +0800
+@@ -175,5 +175,5 @@
+ #CFLAGS="$CFLAGS -g -gstabs"
+ 
+ if [ ".$CPP" = "." ]; then
+-    CPP="$CC -E"
++    CPP="g++ -E"
+ fi
+diff -urNa nginx-1.12.0/auto/make nginx-1.12.0-new/auto/make
+--- nginx-1.12.0/auto/make	2017-04-12 22:46:01.000000000 +0800
++++ nginx-1.12.0-new/auto/make	2018-04-07 14:48:19.565999946 +0800
+@@ -23,7 +23,7 @@
+ CC =	$CC
+ CFLAGS = $CFLAGS
+ CPP =	$CPP
+-LINK =	$LINK
++LINK =	g++
+ 
+ END
+ 
+diff -urNa nginx-1.12.0/LICENSE nginx-1.12.0-new/LICENSE
+--- nginx-1.12.0/LICENSE	2017-04-12 22:46:01.000000000 +0800
++++ nginx-1.12.0-new/LICENSE	1970-01-01 08:00:00.000000000 +0800
+@@ -1,26 +0,0 @@
+-/* 
+- * Copyright (C) 2002-2017 Igor Sysoev
+- * Copyright (C) 2011-2017 Nginx, Inc.
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+- * SUCH DAMAGE.
+- */
+diff -urNa nginx-1.12.0/src/core/ngx_connection.c nginx-1.12.0-new/src/core/ngx_connection.c
+--- nginx-1.12.0/src/core/ngx_connection.c	2017-04-12 22:46:01.000000000 +0800
++++ nginx-1.12.0-new/src/core/ngx_connection.c	2018-04-07 14:48:16.794999947 +0800
+@@ -1397,8 +1397,6 @@
+     } else {
+         level = NGX_LOG_ALERT;
+     }
+-
+-    ngx_log_error(level, c->log, err, text);
+-
++    ngx_log_error(level, c->log, err,text);
+     return NGX_ERROR;
+ }
+diff -urNa nginx-1.12.0/src/core/ngx_palloc.c nginx-1.12.0-new/src/core/ngx_palloc.c
+--- nginx-1.12.0/src/core/ngx_palloc.c	2017-04-12 22:46:01.000000000 +0800
++++ nginx-1.12.0-new/src/core/ngx_palloc.c	2018-04-07 14:48:16.829999947 +0800
+@@ -86,7 +86,7 @@
+         }
+     }
+ 
+-    for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
++    for (p = pool, n = pool->d.next; /* void */p; p = n, n = n->d.next) {
+         ngx_free(p);
+ 
+         if (n == NULL) {
+diff -urNa nginx-1.12.0/src/http/modules/ngx_http_limit_req_module.c nginx-1.12.0-new/src/http/modules/ngx_http_limit_req_module.c
+--- nginx-1.12.0/src/http/modules/ngx_http_limit_req_module.c	2017-04-12 22:46:02.000000000 +0800
++++ nginx-1.12.0-new/src/http/modules/ngx_http_limit_req_module.c	2018-04-07 14:48:16.734999947 +0800
+@@ -49,6 +49,11 @@
+ 
+ 
+ typedef struct {
++    ngx_flag_t                   enable;
++    ngx_str_t                    geo_var_name;
++    ngx_int_t                    geo_var_index;
++    ngx_str_t                    geo_var_value;
++
+     ngx_array_t                  limits;
+     ngx_uint_t                   limit_log_level;
+     ngx_uint_t                   delay_log_level;
+@@ -71,6 +76,8 @@
+     void *conf);
+ static char *ngx_http_limit_req(ngx_conf_t *cf, ngx_command_t *cmd,
+     void *conf);
++static char *ngx_http_limit_req_whitelist(ngx_conf_t *cf, ngx_command_t *cmd,
++    void *conf);
+ static ngx_int_t ngx_http_limit_req_init(ngx_conf_t *cf);
+ 
+ 
+@@ -104,6 +111,13 @@
+       0,
+       NULL },
+ 
++    { ngx_string("limit_req_whitelist"),
++      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE2,
++      ngx_http_limit_req_whitelist,
++      NGX_HTTP_LOC_CONF_OFFSET,
++      0,
++      NULL },
++
+     { ngx_string("limit_req_log_level"),
+       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+       ngx_conf_set_enum_slot,
+@@ -153,6 +167,30 @@
+ };
+ 
+ 
++static inline ngx_int_t
++ngx_http_limit_req_ip_filter(ngx_http_request_t *r,
++    ngx_http_limit_req_conf_t *lrcf)
++{
++    ngx_http_variable_value_t    *vv;
++
++    if (lrcf->geo_var_index != NGX_CONF_UNSET) {
++        vv = ngx_http_get_indexed_variable(r, lrcf->geo_var_index);
++
++        if (vv == NULL || vv->not_found) {
++            return NGX_DECLINED;
++        }
++
++        if ((vv->len == lrcf->geo_var_value.len)
++             && (ngx_memcmp(vv->data, lrcf->geo_var_value.data, vv->len) == 0))
++        {
++            return NGX_OK;
++        }
++    }
++
++    return NGX_DECLINED;
++}
++
++
+ static ngx_int_t
+ ngx_http_limit_req_handler(ngx_http_request_t *r)
+ {
+@@ -175,6 +213,14 @@
+     excess = 0;
+ 
+     rc = NGX_DECLINED;
++	
++	if (!lrcf->enable) {
++        return NGX_DECLINED;
++    }
++	/* filter whitelist */
++    if (ngx_http_limit_req_ip_filter(r, lrcf) == NGX_OK) {
++        return NGX_DECLINED;
++    }
+ 
+ #if (NGX_SUPPRESS_WARN)
+     limit = NULL;
+@@ -688,8 +734,10 @@
+      *     conf->limits.elts = NULL;
+      */
+ 
++    conf->enable = NGX_CONF_UNSET;
+     conf->limit_log_level = NGX_CONF_UNSET_UINT;
+     conf->status_code = NGX_CONF_UNSET_UINT;
++    conf->geo_var_index = NGX_CONF_UNSET;
+ 
+     return conf;
+ }
+@@ -705,6 +753,8 @@
+         conf->limits = prev->limits;
+     }
+ 
++    ngx_conf_merge_value(conf->enable, prev->enable, 0);
++
+     ngx_conf_merge_uint_value(conf->limit_log_level, prev->limit_log_level,
+                               NGX_LOG_ERR);
+ 
+@@ -714,6 +764,11 @@
+     ngx_conf_merge_uint_value(conf->status_code, prev->status_code,
+                               NGX_HTTP_SERVICE_UNAVAILABLE);
+ 
++    ngx_conf_merge_value(conf->geo_var_index, prev->geo_var_index,
++                         NGX_CONF_UNSET);
++
++    ngx_conf_merge_str_value(conf->geo_var_value, prev->geo_var_value, "");
++
+     return NGX_CONF_OK;
+ }
+ 
+@@ -861,6 +916,14 @@
+     ngx_http_limit_req_limit_t  *limit, *limits;
+ 
+     value = cf->args->elts;
++    if (cf->args->nelts == 2) {
++        if (ngx_strncmp(value[1].data, "off", 3) == 0) {
++            lrcf->enable = 0;
++            return NGX_CONF_OK;
++        }
++    }
++
++    lrcf->enable = 1;
+ 
+     shm_zone = NULL;
+     burst = 0;
+@@ -940,6 +1003,52 @@
+     return NGX_CONF_OK;
+ }
+ 
++static char *
++ngx_http_limit_req_whitelist(ngx_conf_t *cf, ngx_command_t *cmd,
++    void *conf)
++{
++    ngx_http_limit_req_conf_t  *lrcf = conf;
++
++    ngx_str_t              *value, s;
++    ngx_uint_t              i;
++
++    value = cf->args->elts;
++
++    for (i = 1; i < cf->args->nelts; i++) {
++        if (ngx_strncmp(value[i].data, "geo_var_name=", 13) == 0) {
++
++            s.len = value[i].len - 13;
++            s.data = value[i].data + 13;
++
++            lrcf->geo_var_name = s;
++
++            lrcf->geo_var_index = ngx_http_get_variable_index(cf,
++                &lrcf->geo_var_name);
++
++            if (lrcf->geo_var_index == NGX_ERROR) {
++                return NGX_CONF_ERROR;
++            }
++
++            continue;
++        }
++
++        if (ngx_strncmp(value[i].data, "geo_var_value=", 14) == 0) {
++
++            s.len = value[i].len - 14;
++            s.data = value[i].data + 14;
++
++            lrcf->geo_var_value = s;
++
++            continue;
++        }
++
++        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
++                           "invalid parameter \"%V\"", &value[i]);
++        return NGX_CONF_ERROR;
++    }
++
++    return NGX_CONF_OK;
++}
+ 
+ static ngx_int_t
+ ngx_http_limit_req_init(ngx_conf_t *cf)
+diff -urNa nginx-1.12.0/src/http/modules/ngx_http_upstream_least_conn_module.c nginx-1.12.0-new/src/http/modules/ngx_http_upstream_least_conn_module.c
+--- nginx-1.12.0/src/http/modules/ngx_http_upstream_least_conn_module.c	2017-04-12 22:46:02.000000000 +0800
++++ nginx-1.12.0-new/src/http/modules/ngx_http_upstream_least_conn_module.c	2018-04-07 14:48:16.711999942 +0800
+@@ -8,7 +8,9 @@
+ #include <ngx_config.h>
+ #include <ngx_core.h>
+ #include <ngx_http.h>
+-
++#if (NGX_HTTP_UPSTREAM_CHECK)
++#include "ngx_http_upstream_check_module.h"
++#endif
+ 
+ static ngx_int_t ngx_http_upstream_init_least_conn_peer(ngx_http_request_t *r,
+     ngx_http_upstream_srv_conf_t *us);
+@@ -147,6 +149,16 @@
+             continue;
+         }
+ 
++#if (NGX_HTTP_UPSTREAM_CHECK)
++        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, pc->log, 0,
++                "get least_conn peer, check_index: %ui",
++                peer->check_index);
++
++        if (ngx_http_upstream_check_peer_down(peer->check_index)) {
++            continue;
++        }
++#endif
++
+         if (peer->max_fails
+             && peer->fails >= peer->max_fails
+             && now - peer->checked <= peer->fail_timeout)
+@@ -202,6 +214,16 @@
+                 continue;
+             }
+ 
++#if (NGX_HTTP_UPSTREAM_CHECK)
++            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, pc->log, 0,
++                    "get least_conn peer, check_index: %ui",
++                    peer->check_index);
++
++            if (ngx_http_upstream_check_peer_down(peer->check_index)) {
++                continue;
++            }
++#endif
++
+             if (peer->conns * best->weight != best->conns * peer->weight) {
+                 continue;
+             }
+diff -urNa nginx-1.12.0/src/http/ngx_http_upstream_round_robin.c nginx-1.12.0-new/src/http/ngx_http_upstream_round_robin.c
+--- nginx-1.12.0/src/http/ngx_http_upstream_round_robin.c	2017-04-12 22:46:02.000000000 +0800
++++ nginx-1.12.0-new/src/http/ngx_http_upstream_round_robin.c	2018-04-07 14:48:16.704000010 +0800
+@@ -8,7 +8,9 @@
+ #include <ngx_config.h>
+ #include <ngx_core.h>
+ #include <ngx_http.h>
+-
++#if (NGX_HTTP_UPSTREAM_CHECK)
++#include "ngx_http_upstream_check_module.h"
++#endif
+ 
+ #define ngx_http_upstream_tries(p) ((p)->number                               \
+                                     + ((p)->next ? (p)->next->number : 0))
+@@ -97,7 +99,14 @@
+                 peer[n].fail_timeout = server[i].fail_timeout;
+                 peer[n].down = server[i].down;
+                 peer[n].server = server[i].name;
+-
++#if (NGX_HTTP_UPSTREAM_CHECK)
++                if (!server[i].down) {
++                    peer[n].check_index =
++                        ngx_http_upstream_check_add_peer(cf, us, &server[i].addrs[j]);
++                } else {
++                    peer[n].check_index = (ngx_uint_t) NGX_ERROR;
++                }
++#endif
+                 *peerp = &peer[n];
+                 peerp = &peer[n].next;
+                 n++;
+@@ -161,7 +170,15 @@
+                 peer[n].fail_timeout = server[i].fail_timeout;
+                 peer[n].down = server[i].down;
+                 peer[n].server = server[i].name;
+-
++#if (NGX_HTTP_UPSTREAM_CHECK)
++                if (!server[i].down) {
++                    peer[n].check_index =
++                        ngx_http_upstream_check_add_peer(cf, us, &server[i].addrs[j]);
++                }
++                else {
++                    peer[n].check_index = (ngx_uint_t) NGX_ERROR;
++                }
++#endif
+                 *peerp = &peer[n];
+                 peerp = &peer[n].next;
+                 n++;
+@@ -228,6 +245,9 @@
+         peer[i].max_conns = 0;
+         peer[i].max_fails = 1;
+         peer[i].fail_timeout = 10;
++#if (NGX_HTTP_UPSTREAM_CHECK)
++        peer[i].check_index = (ngx_uint_t) NGX_ERROR;
++#endif
+         *peerp = &peer[i];
+         peerp = &peer[i].next;
+     }
+@@ -344,6 +364,9 @@
+         peer[0].max_conns = 0;
+         peer[0].max_fails = 1;
+         peer[0].fail_timeout = 10;
++#if (NGX_HTTP_UPSTREAM_CHECK)
++        peer[0].check_index = (ngx_uint_t) NGX_ERROR;
++#endif
+         peers->peer = peer;
+ 
+     } else {
+@@ -378,6 +401,9 @@
+             peer[i].max_conns = 0;
+             peer[i].max_fails = 1;
+             peer[i].fail_timeout = 10;
++#if (NGX_HTTP_UPSTREAM_CHECK)
++            peer[i].check_index = (ngx_uint_t) NGX_ERROR;
++#endif            
+             *peerp = &peer[i];
+             peerp = &peer[i].next;
+         }
+@@ -442,6 +468,12 @@
+         if (peer->max_conns && peer->conns >= peer->max_conns) {
+             goto failed;
+         }
++        
++#if (NGX_HTTP_UPSTREAM_CHECK)
++        if (ngx_http_upstream_check_peer_down(peer->check_index)) {
++            goto failed;
++        }
++#endif 
+ 
+         rrp->current = peer;
+ 
+@@ -537,6 +569,12 @@
+             continue;
+         }
+ 
++#if (NGX_HTTP_UPSTREAM_CHECK)
++        if (ngx_http_upstream_check_peer_down(peer->check_index)) {
++            continue;
++        }
++#endif
++
+         if (peer->max_fails
+             && peer->fails >= peer->max_fails
+             && now - peer->checked <= peer->fail_timeout)
+diff -urNa nginx-1.12.0/src/http/ngx_http_upstream_round_robin.h nginx-1.12.0-new/src/http/ngx_http_upstream_round_robin.h
+--- nginx-1.12.0/src/http/ngx_http_upstream_round_robin.h	2017-04-12 22:46:02.000000000 +0800
++++ nginx-1.12.0-new/src/http/ngx_http_upstream_round_robin.h	2018-04-07 14:48:16.746999947 +0800
+@@ -37,7 +37,9 @@
+     time_t                          fail_timeout;
+     ngx_msec_t                      slow_start;
+     ngx_msec_t                      start_time;
+-
++#if (NGX_HTTP_UPSTREAM_CHECK)
++    ngx_uint_t                      check_index;
++#endif
+     ngx_uint_t                      down;
+ 
+ #if (NGX_HTTP_SSL || NGX_COMPAT)
+diff -urNa nginx-1.12.0/src/os/unix/ngx_send.c nginx-1.12.0-new/src/os/unix/ngx_send.c
+--- nginx-1.12.0/src/os/unix/ngx_send.c	2017-04-12 22:46:02.000000000 +0800
++++ nginx-1.12.0-new/src/os/unix/ngx_send.c	2018-04-07 14:48:16.866999947 +0800
+@@ -9,7 +9,6 @@
+ #include <ngx_core.h>
+ #include <ngx_event.h>
+ 
+-
+ ssize_t
+ ngx_unix_send(ngx_connection_t *c, u_char *buf, size_t size)
+ {
