@@ -13,8 +13,40 @@ MQTT.set(MQTT.GVAR.AREA_DEFAULT,"serverId",mqtt_util.get_serverId())
 redisCluster = libredis3:newCluster()
 redisCluster:set_timeout(30000)
 
+local function split(s, delim)
+    if type(delim) ~= "string" or string.len(delim) <= 0 then
+        return
+    end
+
+    local start = 1
+	local t = {}
+	local str
+    while true do
+    local pos = string.find (s, delim, start, true) -- plain find
+        if not pos then
+          break
+        end
+		str = string.sub (s, start, pos - 1)
+		local pos1 = string.find (str, ":", 1, true) -- plain find
+		local ip=string.sub (str, 1, pos1 - 1)
+		local port=tonumber(string.sub (str, pos1 + 1))
+		table.insert (t, ip)
+		table.insert (t, port)
+        start = pos + string.len (delim)
+    end
+	-- table.insert (t, string.sub (s, start))
+	str=string.sub (s, start)
+	local pos1 = string.find (str, ":", 1, true) 
+	local ip=string.sub (str, 1, pos1 - 1)
+	local port=tonumber(string.sub (str, pos1 + 1))
+	table.insert (t, ip)
+	table.insert (t, port)
+    return t
+end
+
 local function redis3_handler()
-	redisCluster:sync_slots(MQTT.configure.REDIS_CLUSTER_ADDRESS)
+	local t = split(MQTT.configure.REDIS_CLUSTER_ADDRESS,",")
+	redisCluster:sync_slots(t)
 end
 
 local redis3_timer=libnew_timer:new{

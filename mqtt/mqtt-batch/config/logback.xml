@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" scan="true" scanPeriod="30 seconds">
+
+	<property name="LOG_HOME" value="logs" />
+	<property name="APP_ID" value="1" />
+	<property name="SYSLOG_LAYOUT" value="%p %c{2}.%M.%line[%t]: %X{tId}.%X{rId}.${APP_ID} %replace(%msg){'\\s',' '}%n" />
+
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>debug</level>
+		</filter>
+		<encoder charset="UTF-8">
+			<pattern>${SYSLOG_LAYOUT}</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="file-debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/debug.log</file>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>DEBUG</level>
+		</filter>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/backup/${APP_ID}-debug.%d{yyyy-MM-dd}-%i.log.gz
+			</FileNamePattern>
+			<MaxHistory>3</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>500MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder charset="UTF-8">
+			<pattern>${SYSLOG_LAYOUT}</pattern>
+		</encoder>
+	</appender>
+
+
+	<appender name="file-error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/error.log</file>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>DEBUG</level>
+		</filter>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/backup/${APP_ID}-error.%d{yyyy-MM-dd}-%i.log.gz
+			</FileNamePattern>
+			<MaxHistory>3</MaxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>500MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder charset="UTF-8">
+			<pattern>${SYSLOG_LAYOUT}</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="async-file" class="ch.qos.logback.classic.AsyncAppender">
+		<discardingThreshold>0</discardingThreshold>
+		<queueSize>1000</queueSize>
+		<appender-ref ref="file-debug" />
+		<appender-ref ref="file-error" />
+	</appender>
+
+	<!-- <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender"> <syslogHost>remote_home</syslogHost> <facility>AUTH</facility> <suffixPattern>[%thread] 
+		%logger %msg</suffixPattern> </appender> -->
+
+	<logger name="org.apache.zookeeper" level="debug" />
+	<logger name="org.dna.mqtt" level="debug" />
+	<logger name="org.dna.mqtt.batch.MQTTUPConsumer" level="info" />
+	<logger name="org.dna.mqtt.batch.GroupNotifyService" level="info" />
+	
+	<root level="debug">
+		<appender-ref ref="file-debug" />
+	</root>
+</configuration>

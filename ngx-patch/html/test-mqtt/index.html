@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Chat Example Using MQTT Over WebSockets</title>
+    <!--[if lt IE 9]>
+<script src="js/html5.js"></script>
+<![endif]-->
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/bootstrap.min.responsive.css" rel="stylesheet" />
+    <style type="text/css">
+body { padding-top: 40px; }
+
+</style>
+
+<script type="text/javascript">
+    (function() {
+        _fmOpt = {
+            partner: 'pchilltech',
+            appName: 'pchilltech_web',
+            token: '_1466674672234_9113xxxxxx',
+			fpHost: 'https://fptest.fraudmetrix.cn',
+        	staticHost: 'statictest.fraudmetrix.cn',
+            tcpHost: 'fptest.fraudmetrix.cn',
+        	wsHost: 'fptest.fraudmetrix.cn:9090'
+                                                    };
+        var cimg = new Image(1,1);
+        cimg.onload = function() {
+            _fmOpt.imgLoaded = true;
+        };
+        cimg.src = "https://fptest.fraudmetrix.cn/fp/clear.png?partnerCode=pchilltech&appName=pchilltech_web&tokenId=" + _fmOpt.token;
+        var fm = document.createElement('script'); fm.type = 'text/javascript'; fm.async = true;
+        fm.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'statictest.fraudmetrix.cn/fm.js?ver=0.1&t=' + (new Date().getTime()/3600000).toFixed(0);
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(fm, s);
+    })();
+</script>
+  </head>
+  <body>
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span6">
+
+        <div id="connect">
+          <div class="page-header">
+            <h2>Server Login</h2>
+          </div>
+          <form class="form-horizontal" id='connect_form'>
+            <fieldset>
+
+              <div class="control-group">
+                <div class="controls">
+				  <input type="checkbox" id="cleansession">cleanSession
+                </div>
+              </div>
+              <div class="control-group">
+                <label>Client ID</label>
+                <div class="controls">
+				  <input class="input-medium" id='connect_clientId' value="" />
+                </div>
+              </div>
+              <div class="control-group">
+                <label>Password</label>
+                <div class="controls">
+                  <input id='connect_password' placeholder="User Password" value="password" type="password" />
+                </div>
+              </div>
+              <div class="control-group">
+				  <button id='connect_submit213' type="button" class="btn">Connect to 213</button>
+				  <button id='connect_submit72' type="button" class="btn">Connect to 72</button>
+				  <button id='connect_submitrc' type="button" class="btn">Connect to RC</button>
+				  <button id='connect_submitbuyinball' type="button" class="btn">Connect to buyinball</button>
+				  <button id='connect_toX' type="button" class="btn">Connect toX</button><input class="input-medium" id='in_connect_toX' value="" />
+			  </div>
+            </fieldset>
+          </form>
+        </div>
+        <div id="connected" style="display:none">
+			<div class="control-group">
+				<label>Subscribe list</label>
+				<div class="controls">
+					<div class="radio">
+					   <label>
+						  P2P
+					   </label>
+					</div>
+					<div class="radio">
+					   <label>
+						  <input type="radio" name="optionsRadios" id="subscribe_one2many" >G/2/#
+					   </label>
+					</div>
+					<div class="radio">
+					   <label>
+						  <input type="radio" name="optionsRadios" id="subscribe_qos1" >G/3/QOS1
+					   </label>
+					</div>
+					<div class="radio">
+						<label>
+							<input type="radio" name="optionsRadios" id="subscribe_e_all" >G/E/#
+						</label>
+					</div>
+					<div class="radio">
+					   <label>
+						  <input type="radio" name="optionsRadios" id="subscribe_sysmsg" >G/E/N/5/INDEX
+					   </label>
+					</div>
+					<div class="radio">
+					   <label>
+						  <input type="radio" name="optionsRadios" id="subscribe_all" >ALL
+					   </label>
+					</div>
+				</div>
+		  </div>
+		   <div class="control-group">
+			<label>Message</label>
+			<div class="controls">
+			  <textarea class="form-control" id="msgText_area" rows="8">{"mId":"20151202000012000016528","is_master":0,"play":"EUROPE","msgId":"SP_oeurope-0000165285223869691448957896978","site_id":1,"uTime":1448957896000,"match_phase":0,"msgType":"2","odds_phase":2,"odds":"1.70400,3.62000,6.19000","is_init":0}</textarea>
+			</div>
+		  </div>
+		  <div class="control-group">
+			<span id='connect_addr'></span>
+		  </div>
+		  <div class="control-group">
+			<label>P2P TOPIC:</label>
+			<div class="controls">
+			  <input class="input-medium" id='p2p_topic_input' value="" /> <button class="btn" type="button" id="p2p_button">publish p2p</button>
+			</div>
+		  </div>
+		  <div class="control-group">
+			<label>one2Many TOPIC:</label>
+			<div class="controls">
+			  <input class="input-medium" id='one2Many_topic_input' value="G/2/TEST" /> <button class="btn" type="button" id="one2Many_button">publish one2Many</button>
+			</div>
+		  </div>
+		  <div class="control-group">
+			<label>qos1 TOPIC:</label>
+			<div class="controls">
+			  <input class="input-medium" id='qos1_topic_input' value="G/3/QOS1" /> <button class="btn" type="button" id="qos1_button">publish qos1</button>
+			</div>
+		  </div>
+		  <div class="control-group">
+			<label>G/E/N/5/INDEX TOPIC:</label>
+			<div class="controls">
+			  <input class="input-medium" id='sysmsg_topic_input' value="G/E/N/5/INDEX" /> <button class="btn" type="button" id="sysmsg_button">publish G/E/N/5/INDEX</button>
+			</div>
+		  </div>
+		  <div class="control-group">
+			<label>sync TOPIC:</label>
+			<div class="controls">
+			  <input class="input-medium" id='sync_topic_input' value="G/E/N/5/INDEX&min=1" /> <button class="btn" type="button" id="sync_button">Sync</button>
+			</div>
+		  </div>
+		  <div class="control-group">
+			 <button class="btn" type="button" id='disconnect'>Disconnect</button>
+		  </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <!-- Scripts placed at the end of the document so the pages load faster -->
+  <script src='js/jquery-3.0.0.min.js'></script>
+  <script src="js/mqttws31.js"></script>
+  <script>
+var envUrls=["http://192.168.100.213:4000/get_mqttaddr?cId=","http://192.168.88.72:6080/get_mqttaddr?cId=","http://192.168.100.213:4002/get_mqttaddr?cId=","http://192.168.100.213:4001/get_mqttaddr?cId="];
+var count=0;
+var client, subTopic;
+var host;
+var port;
+var pubQos;
+var subQos;
+var clientId="P/example-5694"+Math.floor(Math.random() * 100000);
+$(document).ready(function(){
+	$("#connect_clientId").val(clientId);
+
+	/*CONNECT TO X*/
+	$('#connect_submit213').click(function() {
+		pubQos=subQos=0;
+		ConnectionToX(envUrls[0]);
+		return false;
+	});
+	$('#connect_submit72').click(function() {
+		pubQos=subQos=0;
+		ConnectionToX(envUrls[1]);
+		return false;
+	});
+	$('#connect_submitrc').click(function() {
+		pubQos=subQos=0;
+		ConnectionToX(envUrls[2]);
+		return false;
+	});
+	$('#connect_submitbuyinball').click(function() {
+		pubQos=subQos=0;
+		ConnectionToX(envUrls[3]);
+		return false;
+	});
+	$('#connect_toX').click(function() {
+		pubQos=subQos=0;
+		var url=$("#in_connect_toX").val();
+		ConnectionToX(url,"true");
+		return false;
+	});
+
+	$('#disconnect').click(function() {
+		var myArray=new Array();
+		myArray[0]=subTopic;
+		client.unsubscribe(myArray);
+		client.disconnect();
+		$('#connected').fadeOut({ duration: 'fast' });
+		$('#connect').fadeIn();
+		return false;
+	});
+	/*SEND MESSAGES*/
+	$('#p2p_button').click(function() {
+		pubQos=0;
+		sendMsg($('#p2p_topic_input').val(),true)
+		return false;
+	});
+	$('#one2Many_button').click(function() {
+		pubQos=0;
+		sendMsg($('#one2Many_topic_input').val(),true)
+		return false;
+	});
+	$('#qos1_button').click(function() {
+		pubQos=1;
+		sendMsg($('#qos1_topic_input').val(),true)
+		return false;
+	});
+	$('#sysmsg_button').click(function() {
+		pubQos=1;
+		sendMsg($('#sysmsg_topic_input').val(),true)
+		return false;
+	});
+	/*SUBSCRIBE X*/
+	var subscribeHtml={"subscribe_one2many":{topic:"G/2/#",qos:0},"subscribe_qos1":{topic:"G/3/QOS1",qos:1},"subscribe_e_all":{topic:"G/E/#",qos:0},"subscribe_sysmsg":{topic:"G/E/N/5/INDEX",qos:1}};
+	function unsubscribeAll(){
+		var unArray=new Array();
+		for (var id in subscribeHtml){
+			var obj = subscribeHtml[id];
+			if(typeof obj.topic === "string")
+				unArray.push(obj.topic);
+		}
+		client.unsubscribe(unArray);
+	}
+
+
+	$('#subscribe_one2many').click(function() {
+		unsubscribeAll();
+		var htmlObj=subscribeHtml["subscribe_one2many"];
+		subQos=new Array();
+		subQos.push(htmlObj.qos);
+		var myArray=new Array();
+		myArray[0]=htmlObj.topic;
+		client.subscribe(myArray,{qos:subQos});
+		return true;
+	});
+	$('#subscribe_qos1').click(function() {
+		unsubscribeAll();
+		var htmlObj=subscribeHtml["subscribe_qos1"];
+		subQos=new Array();
+		subQos.push(htmlObj.qos);
+		var myArray=new Array();
+		myArray[0]=htmlObj.topic;
+		client.subscribe(myArray,{qos:subQos});
+		return true;
+	});
+	$('#subscribe_e_all').click(function() {
+		unsubscribeAll();
+		var htmlObj=subscribeHtml["subscribe_e_all"];
+		subQos=new Array();
+		subQos.push(htmlObj.qos);
+		var myArray=new Array();
+		myArray[0]=htmlObj.topic;
+		client.subscribe(myArray,{qos:subQos});
+		return true;
+	});
+	$('#subscribe_sysmsg').click(function() {
+		unsubscribeAll();
+		var htmlObj=subscribeHtml["subscribe_sysmsg"];
+		subQos=new Array();
+		subQos.push(htmlObj.qos);
+		var myArray=new Array();
+		myArray[0]=htmlObj.topic;
+		client.subscribe(myArray,{qos:subQos});
+		return true;
+	});
+	$('#subscribe_all').click(function() {
+		unsubscribeAll();
+		var unArray=new Array();
+		subQos=new Array();
+		for (var id in subscribeHtml){
+			var obj = subscribeHtml[id];
+			if(typeof obj.topic === "string"){
+				unArray.push(obj.topic);
+				subQos.push(obj.qos);
+			}
+		}
+		client.subscribe(unArray,{qos:subQos});
+		return true;
+	});
+	/*OTHER ...*/
+
+	$('#sync_button').click(function() {
+		var topic = $('#sync_topic_input').val();
+		console.log(topic);
+		var myArray=new Array();
+		myArray[0]=topic;
+		client.subscribe(myArray);
+		return false;
+	});
+
+});
+var onConnect = function(frame) {
+	console.log("connected to MQTT");
+	$('#connect').fadeOut({ duration: 'fast' });
+	$('#connected').fadeIn();
+	var myArray=new Array();
+	myArray[0]="S/S1";//SYSTEM MESSAGS
+	subQos=new Array();
+	subQos.push(1);
+	client.subscribe(myArray,{qos:subQos});
+};
+function onFailure(failure) {
+	console.log("failure");
+	console.log(failure.errorMessage);
+	$('#connect').fadeOut({ duration: 'fast' });
+}
+
+function onMessageArrived(message) {
+	try{
+		var msg=JSON.parse(message.payloadString);
+		console.log("offset:"+message.offset+",body:"+msg.mId);//"offset:"+message.offset+
+	}catch (e){
+		console.log("offset:"+message.offset+","+e+",body:"+message.payloadString);
+	}
+
+}
+
+function sendMsg(topic,retained) {
+	console.log("send topic:"+topic);
+	var msgText=$("#msgText_area").val();
+	message = new Messaging.Message(msgText);
+	message.destinationName = topic;
+	message.qos = pubQos;
+	message.retained=retained;
+	client.send(message);
+	return false;
+}
+
+function onConnectionLost(responseObject) {
+	if (responseObject.errorCode !== 0) {
+		console.log(client.clientId + ": " + responseObject.errorCode + "\n");
+	}
+}
+
+function connect2Server(clientId,data){
+	var index = data.indexOf("s://");
+	var useSSL=true;
+	if(index==1){
+		useSSL=false;
+		data=data.substr(5);
+	}else if(index==2){
+		data=data.substr(6);
+	}else{
+		useSSL=false;
+	}
+	index = data.indexOf(":");
+	host=data.substr(0,index);
+	port=data.substr(index+1);
+	$("#connect_addr").text("MQTT BROKER ADDR: "+data);
+
+	client = new Messaging.Client(host, Number(port), clientId);
+	client.onConnect = onConnect;
+	client.onMessageArrived = onMessageArrived;
+	client.onConnectionLost = onConnectionLost;
+	var password = clientId+Math.floor(Math.random() * 100000);
+	var cleansession=$("#cleansession").attr('checked')=='checked';
+	client.connect({
+		cleanSession:cleansession,
+		userName:clientId,
+		password:password,
+		onSuccess:onConnect,
+		onFailure:onFailure,
+		useSSL:useSSL
+	});
+}
+
+function ConnectionToX(url,flag){
+	clientId=$("#connect_clientId").val();
+	/*set default value*/
+
+	$("#p2p_topic_input").val(clientId);
+	$("#subscribe_p2p").val(clientId);
+	subTopic=clientId;
+
+	console.log(url+clientId);
+	if("true"==flag)connect2Server(clientId,url);
+
+    $.ajax({
+        type: "GET",
+        crossDomain:true,
+        url: url+clientId,
+        beforeSend: function(request) {
+            //request.setRequestHeader("mqtt-version", "1");
+        },
+        success: function(data) {
+           connect2Server(clientId,data);
+        }
+    });
+}
+</script></body>
+</html>

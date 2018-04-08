@@ -33,11 +33,22 @@ _M.set=function(name,key,val)
 end
 
 function _M.new(self, opts)
+	libmqttkit.log(ngx.INFO,"start read config...")
     return setmetatable({
+		
 		MQTT_TOPIC_SUB_PAGESIZE = 10,
+		MQTT_TOPIC_SUB_MAX_RANGE=9999999,
 		MQTT_SRV_REGIST_UPS_NAME = "http://127.0.0.1:1000",
 		MQTT_SRV_REGIST_ADDR = "http://127.0.0.1:1000",
-		REDIS_CLUSTER_ADDRESS = "127.0.0.1:6379",
+		MQTT_UP_QUEUE_PREFIX="DEV_MQTT_UP_TG_",		
+		-- MQTT_LOGIN_URL = "http://127.0.0.1:4002/mqtt-service/loginServlet",
+		SRV_REGIST_UPS_NAME="u1.mqttws",
+		SRV_REGIST_BROKER_ADDR="ws://192.168.100.213:1883/mqtt",
+		SRV_REGIST_NOTIFY_ADDR="http://192.168.100.213:4000/notify",
+		SRV_REGIST_ADDR="http://127.0.0.1:4001",
+
+		REDIS_CLUSTER_ADDRESS = "127.0.0.1:6379,127.0.0.1:6378",
+		
         MYSQL_host = "127.0.0.1",
         MYSQL_port=3306,
         MYSQL_database="diversion",
@@ -57,3 +68,4 @@ function _M.new(self, opts)
 end
 
 return _M
+

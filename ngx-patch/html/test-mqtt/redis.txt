@@ -1,0 +1,49 @@
+enum redis_protocol_slots_status_e{redis_p_star,redis_p_row_star,redis_p_min,redis_p_max,redis_p_addr,redis_p_row_end};
+
+*3
+*4
+	:0
+	:5460
+	*2
+		$13
+		192.168.88.73
+		:6379
+	*2
+		$13
+		192.168.88.76
+		:6379
+*4
+	:5461
+	:10922
+	*2
+		$13
+		192.168.88.72
+		:6379
+	*2
+		$13
+		192.168.88.75
+		:6379
+*4
+	:10923
+	:16383
+	*2
+		$13
+		192.168.88.71
+		:6379
+	*2
+		$13
+		192.168.88.74
+		:6379
+
+		
+typedef struct {
+	uint16_t      		min;
+	uint16_t			max;
+	ngx_str_t			addr_ip[10];
+	int					addr_port[10];
+	int					addr_num;
+	unsigned			failed_addr0;
+	ngx_atomic_t 		count;
+} ngx_http_lua_redis_slot_t;
+ old-1452338427,
+ now-1452338487
